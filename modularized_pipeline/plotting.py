@@ -55,21 +55,50 @@ def merge_clusters_with_geodataframe(gdf, color_by_obs, adata):
     return gdf.merge(adata.obs[color_by_obs].astype('category'), left_on='id', right_index=True)
 
 def plot_clusters_and_save_image(title, gdf, img, adata, bbox=None, color_by_obs=None, output_name=None, color_list=None):
-    """Plots and saves clustered nuclei with optional bounding box."""
-    cropped_img = crop_image(img, bbox)
-    merged_gdf = merge_clusters_with_geodataframe(gdf, color_by_obs, adata)
-    filtered_gdf = filter_geodataframe_by_bbox(merged_gdf, bbox)
-    
-    num_categories = len(adata.obs[color_by_obs].astype('category').cat.categories)
-    custom_cmap = create_custom_colormap(color_list or [], num_categories)
+    color_list=["#7f0000","#808000","#483d8b","#008000","#bc8f8f","#008b8b","#4682b4","#000080","#d2691e","#9acd32","#8fbc8f","#800080","#b03060","#ff4500","#ffa500","#ffff00","#00ff00","#8a2be2","#00ff7f","#dc143c","#00ffff","#0000ff","#ff00ff","#1e90ff","#f0e68c","#90ee90","#add8e6","#ff1493","#7b68ee","#ee82ee"]
+    if bbox is not None:
+        cropped_img = img[bbox[1]:bbox[3], bbox[0]:bbox[2]]
+    else:
+        cropped_img = img
 
     fig, axes = plt.subplots(1, 2, figsize=(12, 6))
-    plot_cropped_image(axes[0], cropped_img, title)
-    
-    filtered_gdf.plot(column=color_by_obs, cmap=custom_cmap, ax=axes[1], legend=True)
+
+    axes[0].imshow(cropped_img, cmap='gray', origin='lower')
+    axes[0].set_title(title)
+    axes[0].axis('off')
+
+    if bbox is not None:
+        bbox_polygon = Polygon([(bbox[0], bbox[1]), (bbox[2], bbox[1]), (bbox[2], bbox[3]), (bbox[0], bbox[3])])
+
+    unique_values = adata.obs[color_by_obs].astype('category').cat.categories
+    num_categories = len(unique_values)
+
+    if color_list is not None and len(color_list) >= num_categories:
+        custom_cmap = ListedColormap(color_list[:num_categories], name='custom_cmap')
+    else:
+        # Use default tab20 colors if color_list is insufficient
+        tab20_colors = plt.cm.tab20.colors[:num_categories]
+        custom_cmap = ListedColormap(tab20_colors, name='custom_tab20_cmap')
+
+    merged_gdf = gdf.merge(adata.obs[color_by_obs].astype('category'), left_on='id', right_index=True)
+
+    if bbox is not None:
+        intersects_bbox = merged_gdf['geometry'].intersects(bbox_polygon)
+        filtered_gdf = merged_gdf[intersects_bbox]
+    else:
+        filtered_gdf = merged_gdf
+
+    # Plot the filtered polygons on the second axis
+    plot = filtered_gdf.plot(column=color_by_obs, cmap=custom_cmap, ax=axes[1], legend=True)
+    axes[1].set_title(color_by_obs)
+    legend = axes[1].get_legend()
+    legend.set_bbox_to_anchor((1.05, 1))
     axes[1].axis('off')
 
-    if output_name:
+    # Move legend outside the plot
+    plot.get_legend().set_bbox_to_anchor((1.25, 1))
+
+    if output_name is not None:
         plt.savefig(output_name, bbox_inches='tight')
     else:
         plt.show()
@@ -85,6 +114,8 @@ def plot_nuclei_area(gdf, area_cut_off):
 
     plt.tight_layout()
     plt.show()
+
+
 
 def total_umi(adata_, cut_off):
     """Plots the distribution of total UMI counts."""
