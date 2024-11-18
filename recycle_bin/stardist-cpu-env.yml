@@ -1,0 +1,27 @@
+name: stardist-cpu-env
+channels:
+  - conda-forge
+  - defaults
+dependencies:
+  - python=3.9
+  - pandas
+  - numpy
+  - anndata
+  - geopandas
+  - scanpy
+  - tifffile
+  - csbdeep
+  - shapely
+  - scipy
+  - matplotlib
+  - fastparquet
+  - pyarrow
+  - squidpy
+  - stardist
+  - ipykernel
+  - ipywidgets
+  - ipython
+  - pip
+  - pip:
+      - tensorflow-cpu==2.*
+
