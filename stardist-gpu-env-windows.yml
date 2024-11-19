@@ -24,4 +24,4 @@ dependencies:
   - cudnn=8.1
   - pip
   - pip:
-      - tensorflow==2.10
+      - tensorflow-gpu==2.10
