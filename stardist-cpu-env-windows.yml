@@ -1,4 +1,4 @@
-name: stardist-gpu-windows-env
+name: stardist-cpu-windows-env
 channels:
   - conda-forge
   - defaults
@@ -15,13 +15,12 @@ dependencies:
   - scipy=1.13.1
   - matplotlib=3.9.2
   - fastparquet=2024.5.0
+  - pyarrow=18.0.0
   - squidpy=1.5.0
   - stardist=0.9.1
   - ipykernel=6.29.5
   - ipywidgets=8.1.5
   - ipython=8.18.1
-  - cudatoolkit=11.2
-  - cudnn=8.1
   - pip
   - pip:
-      - tensorflow==2.10
+      - tensorflow-cpu==2.*
