@@ -50,7 +50,6 @@ def load_stardist_model(model_dir='default'):
         if not os.path.exists(model_dir):
             raise ValueError(f"Model directory {model_dir} not found.")
         print(f"Loading pre-trained model from provided directory: {model_dir}")
-        model = StarDist2D.from_pretrained(model_dir)
         model = StarDist2D(None, name='2D_versatile_he',basedir=model_dir)
 
     return model
