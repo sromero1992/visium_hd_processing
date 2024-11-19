@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from shapely.geometry import Polygon
-from plotting_utils import crop_image, filter_geodataframe_by_bbox, plot_cropped_image
+from visiuvisium_hd_functions.plotting_utils import crop_image, filter_geodataframe_by_bbox, plot_cropped_image
 
 # General image plotting functions
 def plot_mask_and_save_image(title, gdf, img, cmap, output_name=None, bbox=None):

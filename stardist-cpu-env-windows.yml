@@ -23,4 +23,4 @@ dependencies:
   - ipython=8.18.1
   - pip
   - pip:
-      - tensorflow-cpu==2.*
+      - tensorflow==2.*
