@@ -20,6 +20,8 @@ dependencies:
   - ipykernel=6.29.5
   - ipywidgets=8.1.5
   - ipython=8.18.1
-  - tensorflow-gpu=2.18.0
-  - cudatoolkit=11.8
-  - cudnn=8.7
+  - cudatoolkit=11.2
+  - cudnn=8.1
+  - pip
+  - pip:
+      - tensorflow-gpu==2.10
