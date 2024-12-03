@@ -1,6 +1,7 @@
 #from tifffile import imread
 import os
 from skimage.io import imread
+from skimage import exposure, img_as_float, img_as_ubyte, io
 from csbdeep.utils import normalize
 from stardist.models import StarDist2D
 
@@ -23,6 +24,50 @@ def normalize_image(img, min_percentile=5, max_percentile=95):
     :return: Normalized image.
     """
     return normalize(img, min_percentile, max_percentile)
+
+def enhance_contrast(image, output_dir, img_name="image", clip_limit=0.03, brightness_factor=1.2):
+    """
+    Enhance the contrast of the image using CLAHE and adjust brightness.
+    Save both the original and enhanced images to the specified directory.
+    
+    :param brightness_factor: Factor to increase brightness (default: 1.2).
+    """
+    # Ensure the image is in float format for processing
+    image_float = img_as_float(image)
+
+    # Clip values to be in the range [0, 1] to avoid errors during CLAHE
+    image_float = image_float.clip(0, 1)
+
+    # Apply CLAHE (Contrast Limited Adaptive Histogram Equalization)
+    contrasted_image = exposure.equalize_adapthist(image_float, clip_limit=clip_limit)
+
+    # Adjust brightness by multiplying with brightness_factor
+    contrasted_image = contrasted_image * brightness_factor
+
+    # Clip values after brightness adjustment to ensure they stay within [0, 1]
+    contrasted_image = contrasted_image.clip(0, 1)
+
+    # Rescale intensity to [0, 255] for saving (both original and enhanced)
+    image_rescaled = exposure.rescale_intensity(image, in_range=(0, 255), out_range=(0, 255))
+    contrasted_rescaled = exposure.rescale_intensity(contrasted_image, in_range=(0, 1), out_range=(0, 255))
+
+    # Ensure the image is in the range of [0, 1] for saving (float images)
+    contrasted_rescaled = contrasted_rescaled / 255.0
+
+    # Ensure the output directory exists
+    os.makedirs(output_dir, exist_ok=True)
+
+    # Save the original image (ensure it's in uint8)
+    original_path = os.path.join(output_dir, f"{img_name}_original.png")
+    io.imsave(original_path, img_as_ubyte(image_rescaled))  # Convert to uint8 for saving
+    print(f"Original image saved at: {original_path}")
+
+    # Save the contrast-enhanced and brightness-adjusted image (ensure it's in uint8)
+    enhanced_path = os.path.join(output_dir, f"{img_name}_enhanced.png")
+    io.imsave(enhanced_path, img_as_ubyte(contrasted_rescaled))  # Convert to uint8 for saving
+    print(f"Enhanced image saved at: {enhanced_path}")
+
+    return contrasted_image
 
 # Function to load the StarDist model from a specific directory
 def load_stardist_model(model_dir='default'):
