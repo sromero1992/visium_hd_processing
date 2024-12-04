@@ -1,0 +1,13 @@
+Metadata-Version: 2.1
+Name: visium_hd_functions
+Version: 0.1.0
+Summary: A collection of functions for Visium HD data processing
+Home-page: https://github.com/sromero1992/visium_hd_processing
+Author: Selim Romero
+Author-email: ssromerogon@tamu.edu
+Requires-Dist: numpy
+Requires-Dist: pandas
+Requires-Dist: matplotlib
+Requires-Dist: shapely
+Requires-Dist: scanpy
+Requires-Dist: geopandas

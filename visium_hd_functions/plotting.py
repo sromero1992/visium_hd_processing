@@ -1,3 +1,4 @@
+import os
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 from shapely.geometry import Polygon
@@ -103,7 +104,8 @@ def plot_clusters_and_save_image(title, gdf, img, adata, bbox=None, color_by_obs
     else:
         plt.show()
 
-def plot_nuclei_area(gdf, area_cut_off):
+
+def plot_nuclei_area(gdf, area_cut_off, output_name=None):
     """Plots histograms of nuclei areas with a cutoff for filtering."""
     fig, axs = plt.subplots(1, 2, figsize=(15, 4))
     axs[0].hist(gdf['area'], bins=50, edgecolor='black')
@@ -113,23 +115,51 @@ def plot_nuclei_area(gdf, area_cut_off):
     axs[1].set_title(f'Nuclei Area Filtered: {area_cut_off}')
 
     plt.tight_layout()
-    plt.show()
+
+    if output_name:
+        # Ensure the directory exists
+        directory = os.path.dirname(output_name)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(output_name, bbox_inches='tight')
+        print(f"Plot saved as: {output_name}")
+    else:
+        plt.show()
+
+    plt.close(fig)
 
 
-
-def total_umi(adata_, cut_off):
-    """Plots the distribution of total UMI counts."""
+def total_umi(adata_, cut_off, output_name=None):
+    """Plots the distribution of total UMI counts with an option to save the plot."""
     fig, axs = plt.subplots(1, 2, figsize=(12, 4))
+    
+    # Boxplot for all total counts
     axs[0].boxplot(adata_.obs["total_counts"], vert=False, patch_artist=True, boxprops=dict(facecolor='skyblue'))
     axs[0].set_title('Total Counts')
 
+    # Boxplot for total counts greater than the cutoff
     axs[1].boxplot(adata_.obs["total_counts"][adata_.obs["total_counts"] > cut_off], vert=False,
                    patch_artist=True, boxprops=dict(facecolor='skyblue'))
     axs[1].set_title(f'Total Counts > {cut_off}')
 
+    # Hide y-axis
     for ax in axs:
         ax.get_yaxis().set_visible(False)
 
     plt.tight_layout()
-    plt.show()
+
+    # Save or show the plot
+    if output_name:
+        # Ensure the directory exists
+        directory = os.path.dirname(output_name)
+        if directory and not os.path.exists(directory):
+            os.makedirs(directory)
+        plt.savefig(output_name, bbox_inches='tight')
+        print(f"Plot saved as: {output_name}")
+    else:
+        plt.show()
+
+    # Free resources
+    plt.close(fig)
+
 

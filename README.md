@@ -15,7 +15,11 @@ Activate environment:
 conda activate stardist-cpu-env
 
 To have global access, in the currect directory of the git repository (visium_hd_processing) install: 
-pip install -e ./visium_hd_functions
+pip install -e path_to/visium_hd_functions
+
+Example:
+pip install -e /home/ssromerogon/packages/visium_hd_processing/visium_hd_functions
+
 
 Install kernel for linux jupyter: 
 python -m ipykernel install --user --name=stardist-cpu-env --display-name "Python (stardist-cpu-env)"
