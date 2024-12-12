@@ -5,21 +5,39 @@ from shapely.geometry import Polygon
 from visium_hd_functions.plotting_utils import crop_image, filter_geodataframe_by_bbox, plot_cropped_image
 
 # General image plotting functions
-def plot_mask_and_save_image(title, gdf, img, cmap, output_name=None, bbox=None):
-    """Plots and saves a mask image with optional bounding box."""
+def plot_mask_and_save_image(title, gdf, img, cmap, output_name=None, bbox=None, dpi=300):
+    """
+    Plots and saves a mask image with optional bounding box, ensuring high-quality output.
+
+    :param title: Title of the plot.
+    :param gdf: GeodataFrame to plot.
+    :param img: Image array to display.
+    :param cmap: Colormap for the geodataframe plot.
+    :param output_name: File name to save the output image (optional).
+    :param bbox: Bounding box to crop the image and geodataframe (optional).
+    :param dpi: Dots per inch for high-quality saving.
+    """
     cropped_img = crop_image(img, bbox)
     filtered_gdf = filter_geodataframe_by_bbox(gdf, bbox)
 
-    fig, axes = plt.subplots(1, 2, figsize=(12, 6))
+    # Create subplots with a larger figure size for better resolution
+    fig, axes = plt.subplots(1, 2, figsize=(16, 8))  # Adjust figsize as needed
     plot_cropped_image(axes[0], cropped_img, title)
-    
+
     filtered_gdf.plot(cmap=cmap, ax=axes[1])
     axes[1].axis('off')
 
     if output_name:
-        plt.savefig(output_name, bbox_inches='tight')
+        # Save the figure with higher DPI for better quality
+        plt.savefig(output_name, bbox_inches='tight', dpi=dpi)
     else:
+        # Show the plot with better interactive quality
         plt.show()
+
+    # Close the figure to free memory
+    plt.close(fig)
+
+
 
 def merge_gene_with_geodataframe(gdf, gene, adata):
     """Merges gene expression data with the GeoDataFrame."""
