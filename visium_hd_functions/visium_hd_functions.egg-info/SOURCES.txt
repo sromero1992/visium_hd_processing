@@ -1,6 +1,0 @@
-setup.py
-visium_hd_functions.egg-info/PKG-INFO
-visium_hd_functions.egg-info/SOURCES.txt
-visium_hd_functions.egg-info/dependency_links.txt
-visium_hd_functions.egg-info/requires.txt
-visium_hd_functions.egg-info/top_level.txt
