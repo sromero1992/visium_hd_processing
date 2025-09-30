@@ -5,7 +5,7 @@ from scipy import sparse
 from anndata import AnnData
 
 def create_geodataframe(polys):
-    geometries = [Polygon([(y, x) for x, y in zip(poly[0], poly[1])]) for poly in polys]
+    geometries = [Polygon(list(zip(poly[0], poly[1]))) for poly in polys]
     gdf = gpd.GeoDataFrame(geometry=geometries)
     gdf['id'] = [f"ID_{i + 1}" for i, _ in enumerate(gdf.index)]
     return gdf
@@ -26,7 +26,6 @@ def create_geodf_coords(df_tissue_positions):
     geometry = [Point(xy) for xy in zip(df_tissue_positions['pxl_col_in_fullres'], df_tissue_positions['pxl_row_in_fullres'])]
     gdf_coordinates = gpd.GeoDataFrame(df_tissue_positions, geometry=geometry)
     return gdf_coordinates
-
 
 def filter_spatial_overlap(adata, gdf, gdf_coordinates):
     # Perform a spatial join to check which coordinates are in a cell nucleus
@@ -49,6 +48,60 @@ def filter_spatial_overlap(adata, gdf, gdf_coordinates):
             filtered_adata.obs, 
             barcodes_in_one_polygon[['index','geometry','id','is_within_polygon','is_not_in_an_polygon_overlap']], 
             left_index=True, right_index=True)
+    
+    return filtered_adata
+
+
+def filter_spatial_overlap_assign(adata: AnnData, gdf: gpd.GeoDataFrame, gdf_coordinates: gpd.GeoDataFrame) -> AnnData:
+    """
+    Filters AnnData object to retain only bins whose center falls within a nucleus polygon.
+    In case of overlap (bin center is in multiple nuclei), the bin is assigned to the 
+    first matching nucleus (less strict than removing all overlapping bins).
+
+    Args:
+        adata: The AnnData object containing the binned gene counts.
+        gdf: GeoDataFrame of nucleus polygons (must be in the same coordinate system as gdf_coordinates).
+        gdf_coordinates: GeoDataFrame of bin center points (barcodes).
+
+    Returns:
+        A new AnnData object filtered to include only assigned bins.
+    """
+    
+    # 1. Perform a spatial join: Find which bin centers fall within a nucleus
+    # The result has multiple rows per barcode if it overlaps multiple polygons.
+    # The 'index' column of the result is the bin barcode.
+    # The 'index_right' column is the index/ID of the nucleus polygon.
+    result_spatial_join = gpd.sjoin(gdf_coordinates, gdf, how='left', predicate='within')
+    
+    # 2. Identify and filter for bins inside ANY nucleus polygon
+    # index_right is NaN if the bin center is not within any polygon
+    barcodes_in_any_polygon = result_spatial_join[~result_spatial_join['index_right'].isna()]
+    
+    # 3. Resolve overlaps: Keep only the FIRST match for each bin barcode.
+    # This assigns the bin to a single nucleus, even if it overlapped multiple.
+    barcodes_assigned_to_one = barcodes_in_any_polygon.drop_duplicates(subset=['index'], keep='first')
+    
+    # 4. Filter the AnnData object
+    # The 'index' column here holds the filtered barcode list.
+    filtered_obs_mask = adata.obs_names.isin(barcodes_assigned_to_one['index'])
+    filtered_adata = adata[filtered_obs_mask, :].copy() # .copy() avoids AnnData view warnings
+    
+    # 5. Add the spatial join results (nucleus ID and geometry) to the AnnData object
+    # Rename 'index_right' to something meaningful like 'nucleus_match_id'
+    barcodes_to_merge = (
+        barcodes_assigned_to_one[['index', 'geometry', 'id', 'index_right']]
+        .rename(columns={'index_right': 'nucleus_match_id', 'id': 'nucleus_id'})
+        .set_index('index') # Set the barcode as the index for merging
+    )
+    
+    # Merge the nucleus assignment information back into filtered_adata.obs
+    filtered_adata.obs = pd.merge(
+        filtered_adata.obs, 
+        barcodes_to_merge, 
+        left_index=True, 
+        right_index=True,
+        how='left' # Use left merge to keep all filtered adata obs
+    )
     
     return filtered_adata
 
