@@ -36,11 +36,12 @@ def merge_tissue_positions(adata, tissue_positions_file):
     adata.obs =  pd.merge(adata.obs, df_tissue_positions, left_index=True, right_index=True)
     return adata, df_tissue_positions
 
-#def create_geodf_coords(df_tissue_positions):
-#    # Create a GeoDataFrame from the DataFrame of coordinates
-#    geometry = [Point(xy) for xy in zip(df_tissue_positions['pxl_col_in_fullres'], df_tissue_positions['pxl_row_in_fullres'])]
-#    gdf_coordinates = gpd.GeoDataFrame(df_tissue_positions, geometry=geometry)
-#    return gdf_coordinates
+def create_geodf_coords(df_tissue_positions):
+    # Create a GeoDataFrame from the DataFrame of coordinates
+    geometry = [Point(xy) for xy in zip(df_tissue_positions['pxl_col_in_fullres'], df_tissue_positions['pxl_row_in_fullres'])]
+    gdf_coordinates = gpd.GeoDataFrame(df_tissue_positions, geometry=geometry)
+    return gdf_coordinates
+
 
 def filter_spatial_overlap(adata, gdf, gdf_coordinates):
     # Perform a spatial join to check which coordinates are in a cell nucleus
