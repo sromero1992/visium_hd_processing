@@ -4,28 +4,36 @@ from shapely.geometry import Polygon, Point
 from scipy import sparse
 from anndata import AnnData
 
+from shapely.geometry import Polygon
+import geopandas as gpd
+
 def create_geodataframe(polys):
-    geometries = [Polygon(list(zip(poly[0], poly[1]))) for poly in polys]
+    """
+    Creates a GeoDataFrame by performing the (X, Y) -> (Y, X) coordinate swap 
+    on the polygon vertices, matching the explicit swap in the 10x pipeline code.
+    
+    It assumes polys[0] contains all X-coordinates and polys[1] contains all Y-coordinates.
+    """
+    
+    # This line implements the swap: [(y, x) for x, y in zip(poly[0], poly[1])]
+    # Where:
+    # poly[0] is X-coordinates (assigned to 'x' in the inner loop)
+    # poly[1] is Y-coordinates (assigned to 'y' in the inner loop)
+    # The output tuple is (y, x) -> resulting in (Y, X) order for the polygon vertices.
+    geometries = [Polygon([(y, x) for x, y in zip(poly[0], poly[1])]) for poly in polys]
     gdf = gpd.GeoDataFrame(geometry=geometries)
     gdf['id'] = [f"ID_{i + 1}" for i, _ in enumerate(gdf.index)]
-    return gdf
-
-def merge_tissue_positions(adata, tissue_positions_file):
-    # Read the tissue positions file into a DataFrame
-    df_tissue_positions = pd.read_parquet(tissue_positions_file, engine='pyarrow')
-    # Set 'barcode' as the index in df_tissue_positions
-    df_tissue_positions = df_tissue_positions.set_index('barcode')
-    # Create an index in the dataframe to check joins
+    return gdf    # Create an index in the dataframe to check joins
     df_tissue_positions['index'] = df_tissue_positions.index
     # Adding the tissue positions to the meta data
     adata.obs =  pd.merge(adata.obs, df_tissue_positions, left_index=True, right_index=True)
     return adata, df_tissue_positions
 
-def create_geodf_coords(df_tissue_positions):
-    # Create a GeoDataFrame from the DataFrame of coordinates
-    geometry = [Point(xy) for xy in zip(df_tissue_positions['pxl_col_in_fullres'], df_tissue_positions['pxl_row_in_fullres'])]
-    gdf_coordinates = gpd.GeoDataFrame(df_tissue_positions, geometry=geometry)
-    return gdf_coordinates
+#def create_geodf_coords(df_tissue_positions):
+#    # Create a GeoDataFrame from the DataFrame of coordinates
+#    geometry = [Point(xy) for xy in zip(df_tissue_positions['pxl_col_in_fullres'], df_tissue_positions['pxl_row_in_fullres'])]
+#    gdf_coordinates = gpd.GeoDataFrame(df_tissue_positions, geometry=geometry)
+#    return gdf_coordinates
 
 def filter_spatial_overlap(adata, gdf, gdf_coordinates):
     # Perform a spatial join to check which coordinates are in a cell nucleus
