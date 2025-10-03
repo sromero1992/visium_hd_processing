@@ -23,7 +23,14 @@ def create_geodataframe(polys):
     geometries = [Polygon([(y, x) for x, y in zip(poly[0], poly[1])]) for poly in polys]
     gdf = gpd.GeoDataFrame(geometry=geometries)
     gdf['id'] = [f"ID_{i + 1}" for i, _ in enumerate(gdf.index)]
-    return gdf    # Create an index in the dataframe to check joins
+    return gdf
+
+def merge_tissue_positions(adata, tissue_positions_file):
+    # Read the tissue positions file into a DataFrame
+    df_tissue_positions = pd.read_parquet(tissue_positions_file, engine='pyarrow')
+    # Set 'barcode' as the index in df_tissue_positions
+    df_tissue_positions = df_tissue_positions.set_index('barcode')
+    # Create an index in the dataframe to check joins
     df_tissue_positions['index'] = df_tissue_positions.index
     # Adding the tissue positions to the meta data
     adata.obs =  pd.merge(adata.obs, df_tissue_positions, left_index=True, right_index=True)
