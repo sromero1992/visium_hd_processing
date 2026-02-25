@@ -100,22 +100,28 @@ def load_stardist_model(model_dir='default'):
     return model
 
 # Function to predict nuclei using a trained model
-def predict_nuclei(model, img, block_size=4096, prob_thresh=0.01, nms_thresh=0.001, 
+def predict_nuclei(model, img, block_size=4096, prob_thresh=0.01, nms_thresh=0.001,
                    min_overlap=128, context=128, normalizer=None, n_tiles=(4, 4, 1)):
-    """
-    Predict nuclei instances using a StarDist2D model.
-    :param model: Trained StarDist2D model.
-    :param img: Input image to predict on.
-    :param block_size: Size of the image blocks to process (default: 4096).
-    :param prob_thresh: Probability threshold for predicting nuclei (default: 0.01).
-    :param nms_thresh: Non-Maximum Suppression threshold (default: 0.001).
-    :param min_overlap: Minimum overlap for combining predictions (default: 128).
-    :param context: Context padding for tile predictions (default: 128).
-    :param normalizer: Normalizer function (default: None).
-    :param n_tiles: Number of tiles in X, Y, and Z for processing large images (default: (4, 4, 1)).
-    :return: Predicted nuclei instances.
-    """
-    return model.predict_instances_big(img, axes='YXC', block_size=block_size, prob_thresh=prob_thresh,
-                                       nms_thresh=nms_thresh, min_overlap=min_overlap, context=context, 
-                                       normalizer=normalizer, n_tiles=n_tiles)
 
+    # Handle both Grayscale (Macro) and RGB (Raw)
+    if img.ndim == 2:
+        # It's a single channel 'Macro' image
+        print(f"Detected grayscale image {img.shape}. Stacking to RGB...")
+        img = np.stack((img,)*3, axis=-1)
+    elif img.ndim == 3 and img.shape[-1] == 1:
+        # It's (H, W, 1), stack it to (H, W, 3)
+        img = np.concatenate([img]*3, axis=-1)
+
+    # Now that we are sure it's 3-channel, use YXC
+    # Note: ensure n_tiles is (Y, X, C) to match
+    return model.predict_instances_big(
+        img,
+        axes='YXC',
+        block_size=block_size,
+        prob_thresh=prob_thresh,
+        nms_thresh=nms_thresh,
+        min_overlap=min_overlap,
+        context=context,
+        normalizer=normalizer,
+        n_tiles=n_tiles
+    )
